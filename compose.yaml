@@ -1,0 +1,33 @@
+services:
+  #Backend API
+  myapp-api:
+    container_name: myapp_backend
+    build: ./
+    command: npm start
+    working_dir: /usr/src/myapp-api
+    environment:
+      POSTGRES_URI: postgres://postgres:zawadi2005@postgres:5432/myapp-docker
+      REDIS_URI: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/usr/src/myapp-api
+
+  #Postgres
+  postgres:
+    build: ./postgres
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: zawadi2005
+      POSTGRES_DB: myapp-docker
+
+  #Redis
+  redis:
+    image: "redis"
+    ports:
+      - "6379:6379"
