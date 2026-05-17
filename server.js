@@ -174,6 +174,38 @@ app.get("/redis-test", async (req, res) => {
   }
 });
 
+app.get("/auth-test", async (req, res) => {
+  try {
+    const authorization = req.headers.authorization;
+
+    if (!authorization) {
+      return res.status(401).json({
+        success: false,
+        message: "No authorization header received",
+      });
+    }
+
+    const token = authorization.replace(/^Bearer\s+/i, "").trim();
+
+    const rawLookup = await signin.redisClient.get(authorization);
+    const normalizedLookup = await signin.redisClient.get(token);
+
+    res.json({
+      success: true,
+      hasAuthorizationHeader: true,
+      rawHeaderFoundInRedis: Boolean(rawLookup),
+      normalizedTokenFoundInRedis: Boolean(normalizedLookup),
+      rawLookup,
+      normalizedLookup,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
 app.get("/", (req, res) => {
   res.send("ITS WORKING!!!");
 });
