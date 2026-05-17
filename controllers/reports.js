@@ -33,9 +33,7 @@ const generateSampleId = () => {
 
 const formatProcessingTime = (ms) => {
   if (!ms && ms !== 0) return "N/A";
-
   if (ms < 1000) return `${ms} ms`;
-
   return `${(ms / 1000).toFixed(2)} seconds`;
 };
 
@@ -134,6 +132,7 @@ const getReports = async (req, res, db) => {
     const rows = await db("reports")
       .leftJoin("users", "reports.user_id", "users.id")
       .select("reports.*", "users.name as user_name")
+      .where("reports.user_id", req.userId)
       .orderBy("reports.created_at", "desc");
 
     res.json(rows.map(mapReportRow));
@@ -150,6 +149,7 @@ const getRecentReports = async (req, res, db) => {
     const rows = await db("reports")
       .leftJoin("users", "reports.user_id", "users.id")
       .select("reports.*", "users.name as user_name")
+      .where("reports.user_id", req.userId)
       .orderBy("reports.created_at", "desc")
       .limit(limit);
 
@@ -168,6 +168,7 @@ const getReportById = async (req, res, db) => {
       .leftJoin("users", "reports.user_id", "users.id")
       .select("reports.*", "users.name as user_name")
       .where("reports.report_id", id)
+      .andWhere("reports.user_id", req.userId)
       .first();
 
     if (!row) {
@@ -188,6 +189,7 @@ const updateReportNotes = async (req, res, db) => {
 
     const updated = await db("reports")
       .where({ report_id: id })
+      .andWhere({ user_id: req.userId })
       .update({ notes })
       .returning("*");
 
@@ -208,6 +210,7 @@ const confirmReport = async (req, res, db) => {
 
     const updated = await db("reports")
       .where({ report_id: id })
+      .andWhere({ user_id: req.userId })
       .update({ status: "Confirmed" })
       .returning("*");
 
@@ -230,6 +233,7 @@ const exportReportPdf = async (req, res, db) => {
       .leftJoin("users", "reports.user_id", "users.id")
       .select("reports.*", "users.name as user_name")
       .where("reports.report_id", id)
+      .andWhere("reports.user_id", req.userId)
       .first();
 
     if (!row) {
