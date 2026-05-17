@@ -1,13 +1,14 @@
 const jwt = require("jsonwebtoken");
 const redis = require("redis");
 
+const JWT_SECRET = process.env.JWT_SECRET || "JWT_SECRET";
+
+// setup redis
 const redisClient = redis.createClient({
   url: process.env.REDIS_URI,
 });
 
-redisClient.on("error", (err) => {
-  console.log("Redis Client Error:", err);
-});
+redisClient.on("error", (err) => console.log("Redis Client Error", err));
 
 (async () => {
   try {
@@ -17,10 +18,6 @@ redisClient.on("error", (err) => {
     console.log("Redis connection failed:", err);
   }
 })();
-
-const extractToken = (authorization = "") => {
-  return authorization.replace(/^Bearer\s+/i, "").trim();
-};
 
 const handleSignIn = (db, bcrypt, req, res) => {
   const { email, password } = req.body;
@@ -48,8 +45,13 @@ const handleSignIn = (db, bcrypt, req, res) => {
         .select("*")
         .from("users")
         .where("email", "=", email)
-        .then((user) => user[0]);
+        .then((user) => user[0])
+        .catch(() => Promise.reject("unable to get user"));
     });
+};
+
+const extractToken = (authorization = "") => {
+  return authorization.replace(/^Bearer\s+/i, "").trim();
 };
 
 const getAuthTokenId = async (req, res) => {
@@ -62,69 +64,59 @@ const getAuthTokenId = async (req, res) => {
 
     const token = extractToken(authorization);
 
-    let reply = await redisClient.get(token);
+    const decoded = jwt.verify(token, JWT_SECRET);
 
-    if (!reply) {
-      reply = await redisClient.get(authorization);
+    if (!decoded?.id) {
+      return res.status(401).json("Unauthorized: invalid token payload");
     }
 
-    if (!reply) {
-      return res.status(401).json("Unauthorized: token not found in Redis");
-    }
-
-    return res.json({ id: reply });
+    return res.json({ id: decoded.id });
   } catch (err) {
-    console.error("getAuthTokenId error:", err);
-    return res.status(400).json("Unauthorized: Redis error");
+    console.error("getAuthTokenId error:", err.message);
+    return res.status(401).json("Unauthorized: invalid token");
   }
 };
 
-const signToken = (email) => {
-  const jwtPayload = { email };
+const signToken = (user) => {
+  const jwtPayload = {
+    id: user.id,
+    email: user.email,
+  };
 
-  return jwt.sign(jwtPayload, "JWT_SECRET", { expiresIn: "2 days" });
+  return jwt.sign(jwtPayload, JWT_SECRET, { expiresIn: "2 days" });
 };
 
 const setToken = async (key, value) => {
   try {
-    if (!redisClient.isOpen) {
-      throw new Error("Redis client is not open");
+    // Redis becomes optional session storage, but JWT is now the main auth method.
+    if (redisClient.isOpen) {
+      await redisClient.set(key, String(value), {
+        EX: 60 * 60 * 24 * 2,
+      });
     }
 
-    await redisClient.set(key, String(value), {
-      EX: 60 * 60 * 24 * 2,
-    });
-
-    const savedValue = await redisClient.get(key);
-
-    console.log("Redis token saved:", {
-      tokenSaved: Boolean(savedValue),
-      userId: savedValue,
-    });
-
-    if (!savedValue) {
-      throw new Error("Token was not saved in Redis");
-    }
-
-    return Promise.resolve(savedValue);
+    return Promise.resolve();
   } catch (err) {
-    console.log("Error setting token in redis:", err);
-    return Promise.reject(err);
+    console.log("Error setting token in redis", err);
+    return Promise.resolve();
   }
 };
 
 const createSessions = async (user) => {
-  const { email, id } = user;
+  try {
+    const token = signToken(user);
 
-  const token = signToken(email);
+    await setToken(token, user.id);
 
-  await setToken(token, id);
-
-  return {
-    success: "true",
-    userId: id,
-    token,
-  };
+    return {
+      success: "true",
+      userId: user.id,
+      token,
+    };
+  } catch (err) {
+    console.log("error creating session", err);
+    throw err;
+  }
 };
 
 const signInAuthentication = (db, bcrypt) => (req, res) => {
@@ -141,11 +133,7 @@ const signInAuthentication = (db, bcrypt) => (req, res) => {
           throw new Error("Invalid credentials");
         })
         .then((session) => {
-          console.log("session created:", {
-            userId: session.userId,
-            hasToken: Boolean(session.token),
-          });
-
+          console.log("session created:", session);
           res.json(session);
         })
         .catch((err) => {
