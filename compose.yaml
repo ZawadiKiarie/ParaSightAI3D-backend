@@ -8,6 +8,7 @@ services:
     environment:
       POSTGRES_URI: postgres://postgres:zawadi2005@postgres:5432/myapp-docker
       REDIS_URI: redis://redis:6379
+      DETECTION_API_URL: http://host.docker.internal:5000/detect
     depends_on:
       - postgres
       - redis
