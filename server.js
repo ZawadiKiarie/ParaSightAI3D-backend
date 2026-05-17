@@ -206,6 +206,14 @@ app.get("/auth-test", async (req, res) => {
   }
 });
 
+app.get("/jwt-test", auth.requireAuth, (req, res) => {
+  res.json({
+    success: true,
+    userId: req.userId,
+    userEmail: req.userEmail,
+  });
+});
+
 app.get("/", (req, res) => {
   res.send("ITS WORKING!!!");
 });
