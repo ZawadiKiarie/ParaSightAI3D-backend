@@ -25,7 +25,7 @@ const db = knex({
 app.use(morgan("combined"));
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://your-frontend-name.onrender.com",
+  "https://parasightai3d.onrender.com",
 ];
 
 app.use(
