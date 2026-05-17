@@ -11,6 +11,10 @@ redisClient.on("error", (err) => console.log("Redis Client Error", err));
   await redisClient.connect();
 })();
 
+const extractToken = (authorization = "") => {
+  return authorization.replace(/^Bearer\s+/i, "").trim();
+};
+
 const handleSignIn = (db, bcrypt, req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -38,9 +42,26 @@ const handleSignIn = (db, bcrypt, req, res) => {
 const getAuthTokenId = async (req, res) => {
   try {
     const { authorization } = req.headers;
-    const reply = await redisClient.get(authorization);
+
+    if (!authorization) {
+      return res.status(401).json("Unauthorized: no token provided");
+    }
+
+    const token = extractToken(authorization);
+
+    let reply = await redisClient.get(token);
+
+    if (!reply) {
+      reply = await redisClient.get(authorization);
+    }
+
+    if (!reply) {
+      return res.status(401).json("Unauthorized: token not found in Redis");
+    }
+
     return res.json({ id: reply });
   } catch (err) {
+    console.error("getAuthTokenId error:", err);
     return res.status(400).json("Unauthorized");
   }
 };
@@ -52,7 +73,10 @@ const signToken = (email) => {
 
 const setToken = async (key, value) => {
   try {
-    await redisClient.set(key, value);
+    await redisClient.set(key, value, {
+      EX: 60 * 60 * 24 * 2, // 2 days
+    });
+
     return Promise.resolve();
   } catch (err) {
     console.log("Error setting token in redis", err);
