@@ -23,7 +23,17 @@ const db = knex({
 });
 
 app.use(morgan("combined"));
-app.use(cors());
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://your-frontend-name.onrender.com",
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  }),
+);
 app.use(express.json());
 
 app.use(
@@ -141,6 +151,8 @@ app.get("/reports/:id/export", auth.requireAuth, (req, res) => {
 app.get("/", (req, res) => {
   res.send("ITS WORKING!!!");
 });
-app.listen(3000, () => {
-  console.log("app is running on port 3000");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`app is running on port ${PORT}`);
 });
