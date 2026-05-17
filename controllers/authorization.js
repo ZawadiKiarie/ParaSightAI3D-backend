@@ -16,15 +16,16 @@ const requireAuth = async (req, res, next) => {
   const token = extractToken(authorization);
 
   try {
-    // Try the normalized token first.
     let userId = await redisClient.get(token);
 
-    // Fallback: try the exact header value in case old sessions used it.
     if (!userId) {
       userId = await redisClient.get(authorization);
     }
 
-    console.log("Redis user id:", userId);
+    console.log("Redis auth lookup:", {
+      found: Boolean(userId),
+      userId,
+    });
 
     if (!userId) {
       return res.status(401).json("Unauthorized: token not found in Redis");
