@@ -148,6 +148,32 @@ app.get("/reports/:id/export", auth.requireAuth, (req, res) => {
   reports.exportReportPdf(req, res, db);
 });
 
+app.get("/redis-test", async (req, res) => {
+  try {
+    const key = `test:${Date.now()}`;
+
+    await signin.redisClient.set(key, "redis is working", {
+      EX: 60,
+    });
+
+    const value = await signin.redisClient.get(key);
+
+    res.json({
+      success: true,
+      value,
+      redisUrlExists: Boolean(process.env.REDIS_URI),
+    });
+  } catch (error) {
+    console.error("Redis test failed:", error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      redisUrlExists: Boolean(process.env.REDIS_URI),
+    });
+  }
+});
+
 app.get("/", (req, res) => {
   res.send("ITS WORKING!!!");
 });
