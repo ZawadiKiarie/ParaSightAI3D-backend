@@ -1,3 +1,14 @@
+/**
+ * profile.js
+ *
+ * Handles user profile retrieval and profile updates for the backend.
+ * It can fetch a user's basic details from the users table and update
+ * their name, email, and optionally password.
+ *
+ * Profile updates are done inside a database transaction so the users table
+ * and login table stay synchronized when email or password details change.
+ */
+
 const handleProfileGet = (req, res, db) => {
   const { id } = req.params;
 

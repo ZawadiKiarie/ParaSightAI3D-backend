@@ -1,5 +1,16 @@
 // controllers/image.js
 
+/**
+ * image.js
+ *
+ * Handles communication between the backend and the AI detection service.
+ * It receives the uploaded image file path, converts the image into FormData,
+ * and sends it to the external detection API for parasite analysis.
+ *
+ * The detection response is returned to the upload route, where it is used
+ * to create the user's AI detection result and saved report.
+ */
+
 const FormData = require("form-data");
 const fs = require("fs");
 const axios = require("axios");

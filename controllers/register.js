@@ -1,3 +1,14 @@
+/**
+ * register.js
+ *
+ * Handles new user registration for the backend.
+ * It validates the submitted name, email, and password, hashes the password,
+ * then saves the login details and user profile details in the database.
+ *
+ * The registration process uses a database transaction so the login and users
+ * tables are created together, then returns a new authenticated user session.
+ */
+
 const signin = require("./signin");
 
 const handleRegister = (req, res, db, bcrypt) => {

@@ -1,3 +1,16 @@
+/**
+ * reports.js
+ *
+ * Handles report creation, retrieval, updating, confirmation, and PDF export.
+ * It creates a saved report from AI detection results, stores the analyzed
+ * microscopy image, maps database rows into frontend-friendly report objects,
+ * and fetches only reports belonging to the authenticated user.
+ *
+ * This controller supports the reports list, recent dashboard activity,
+ * report details page, clinical notes editing, result confirmation,
+ * and downloadable PDF report generation.
+ */
+
 const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");

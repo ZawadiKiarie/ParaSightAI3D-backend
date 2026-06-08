@@ -1,3 +1,15 @@
+/**
+ * server.js
+ *
+ * Main backend entry point for the ParaSightAI3D API.
+ * It sets up the Express server, PostgreSQL database connection, CORS,
+ * JSON parsing, request logging, static report image access, and image upload handling.
+ *
+ * This file connects the main backend controllers for authentication, profiles,
+ * image detection uploads, report creation, report retrieval, note updates,
+ * result confirmation, and PDF export.
+ */
+
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const cors = require("cors");

@@ -1,3 +1,15 @@
+/**
+ * signin.js
+ *
+ * Handles user sign-in and session creation for the backend.
+ * It verifies the submitted email and password against the login table,
+ * creates a JWT token for valid users, and stores the token with the user ID
+ * in Redis.
+ *
+ * The stored Redis token is later used by protected routes to identify the
+ * authenticated user and allow access to their profile, uploads, and reports.
+ */
+
 const jwt = require("jsonwebtoken");
 const redis = require("redis");
 
